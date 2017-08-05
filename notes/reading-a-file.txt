@@ -1,0 +1,74 @@
+
+var results = [];
+  var rl = require('readline').createInterface({
+    input: require('fs').createReadStream('./assets/stylesheets/_icons.scss')
+  });
+
+
+  // for every new line, if it matches the regex, add it to an array
+  // this is ugly regex :)
+  rl.on('line', function (line) {
+    var re = /\.icon-icon.*:/;
+    var match;
+    if ((match = re.exec(line)) !== null) {
+      results.push(match[0].replace(".",'').replace(":",''));
+    }
+  });
+
+
+  // readline emits a close event when the file is read.
+  rl.on('close', function(){
+    var outputFilename = './icons.json';
+    fs.writeFile(outputFilename, JSON.stringify(results, null, 2), function(err) {
+        if(err) {
+          console.log(err);
+        } else {
+          console.log("JSON saved to " + outputFilename);
+        }
+    });
+  });
+
+  ##############
+
+... using the above ....
+
+  var events = require('events');
+
+  var LineStream = function (input) {
+      var remaining = '';
+
+      input.on('data', function (data) {
+          remaining += data;
+          var index = remaining.indexOf('\n');
+          var last = 0;
+          while (index > -1) {
+              var line = remaining.substring(last, index);
+              last = index + 1;
+              this.emit('data', line);
+              index = remaining.indexOf('\n', last);
+          }
+          remaining = remaining.substring(last);
+      }.bind(this));
+
+      input.on('end', function() {
+          if (remaining.length > 0) {
+              this.emit('data', remaining);
+          }
+          this.emit('end');
+      }.bind(this));
+  }
+
+  LineStream.prototype = new events.EventEmitter;
+  Use it as a wrapper:
+
+  var lineInput = new LineStream(input);
+
+  lineInput.on('data', function (line) {
+      // handle line
+  });
+
+  lineInput.on('end', function() {
+      // wrap it up
+  });
+
+ ################
